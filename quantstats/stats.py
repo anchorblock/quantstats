@@ -269,7 +269,7 @@ def autocorr_penalty(returns, prepare_returns=False):
 # ======= METRICS =======
 
 
-def sharpe(returns, rf=0.0, periods=252, annualize=True, smart=False):
+def sharpe(returns, rf=0.0, periods=256, annualize=True, smart=False):
     """
     Calculates the sharpe ratio of access returns
 

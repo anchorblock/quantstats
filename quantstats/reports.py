@@ -674,7 +674,9 @@ def slippage_commission(results_pred):
 
 
 def full(
-    returns,
+    returns = None,
+    precost_returns = None,
+    postcost_returns = None,
     benchmark=None,
     rf=0.0,
     grayscale=False,
@@ -687,6 +689,8 @@ def full(
     **kwargs,
 ):
     # prepare timeseries
+    if postcost_returns is not None:
+        returns = postcost_returns
     if match_dates:
         returns = returns.dropna()
     returns = _utils._prepare_returns(returns)
@@ -739,6 +743,8 @@ def full(
         iDisplay(
             metrics(
                 returns=returns,
+                precost_returns=precost_returns,
+                postcost_returns=postcost_returns,
                 benchmark=benchmark,
                 rf=rf,
                 display=display,
@@ -775,6 +781,8 @@ def full(
         print("[Performance Metrics]\n")
         metrics(
             returns=returns,
+            precost_returns=precost_returns,
+            postcost_returns=postcost_returns,
             benchmark=benchmark,
             rf=rf,
             display=display,
@@ -793,7 +801,7 @@ def full(
             else:
                 print(
                     _tabulate(
-                        dd_info, headers="keys", tablefmt="simple", floatfmt=".2f"
+                        dd_info, headers="keys", tablefmt="simple", floatfmt=".3f"
                     )
                 )
         elif isinstance(dd, _pd.DataFrame):
@@ -804,7 +812,7 @@ def full(
                     print(f"{ptf}\n")
                     print(
                         _tabulate(
-                            dd_info, headers="keys", tablefmt="simple", floatfmt=".2f"
+                            dd_info, headers="keys", tablefmt="simple", floatfmt=".3f"
                         )
                     )
 
@@ -1037,19 +1045,22 @@ def basic(
 
 
 def metrics(
-    returns,
+    returns=None,
+    precost_returns = None,
+    postcost_returns = None,
     benchmark=None,
     rf=0.0,
     display=True,
     mode="basic",
     sep=False,
     compounded=True,
-    periods_per_year=252,
+    periods_per_year=256,
     prepare_returns=True,
     match_dates=True,
     **kwargs,
 ):
-
+    if postcost_returns is not None:
+        returns = postcost_returns
     if match_dates:
         returns = returns.dropna()
     returns.index = returns.index.tz_localize(None)
@@ -1130,7 +1141,12 @@ def metrics(
         s_rf["benchmark"] = rf
 
     df = df.fillna(0)
+    if precost_returns is not None:
+        if prepare_returns:
+            pre_df = _utils._prepare_returns(precost_returns)
 
+        if isinstance(returns, _pd.Series):
+            pre_df = _pd.DataFrame({"returns": precost_returns})
     # pct multiplier
     pct = 100 if display or "internal" in kwargs else 1
     if kwargs.get("as_pct", False):
@@ -1155,6 +1171,10 @@ def metrics(
     if compounded:
         metrics["Cumulative Return %"] = (
             _stats.comp(df) * pct).map("{:,.2f}".format)
+        if precost_returns is not None:
+            metrics["Pre-Cost Cumulative Return %"] = (
+                _stats.comp(pre_df) * pct).map("{:,.2f}".format)
+ 
         # adding code for active return:
         if 'benchmark' in df:
             numcum = {}
@@ -1171,12 +1191,21 @@ def metrics(
             metrics = metrics.drop(columns='Cumulative Return1 %')
     else:
         metrics["Total Return %"] = (df.sum() * pct).map("{:,.2f}".format)
+        if precost_returns is not None:
+            metrics["Pre-Cost Total Return %"] = (pre_df.sum() * pct).map("{:,.2f}".format) 
+               
+
 
     metrics["CAGR﹪%"] = _stats.cagr(df, rf, compounded) * pct
 
     metrics["~~~~~~~~~~~~~~"] = blank
-
-    metrics["Sharpe"] = _stats.sharpe(df, rf, win_year, True)
+    if postcost_returns is not None:
+        metrics['Post-cost Sharpe'] = _stats.sharpe(df,rf,win_year,True)
+    else:
+        metrics["Sharpe"] = _stats.sharpe(df, rf, win_year, True)
+    if precost_returns is not None:
+        metrics['Pre-Cost Sharpe'] = _stats.sharpe(pre_df,rf,win_year,True)    
+        metrics['Cost in Sharpe'] = metrics['Pre-Cost Sharpe']-metrics['Post-cost Sharpe']
     metrics["Prob. Sharpe Ratio %"] = (
         _stats.probabilistic_sharpe_ratio(df, rf, win_year, False) * pct
     )
