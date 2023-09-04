@@ -445,7 +445,7 @@ def log_returns(
     prepare_returns=True,
 ):
     #remove log return
-    return None
+    
     title = "Cumulative Returns" if compound else "Returns"
     if benchmark is not None:
         if isinstance(benchmark, str):

@@ -737,7 +737,7 @@ def full(
                 dd_info.columns = map(
                     lambda x: str(x).title(), dd_info.columns)
             dd_info_dict[ptf] = dd_info
-
+    
     if _utils._in_notebook():
         iDisplay(iHTML("<h4>Performance Metrics</h4>"))
         iDisplay(
