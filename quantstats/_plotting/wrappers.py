@@ -479,7 +479,7 @@ def log_returns(
         grayscale=grayscale,
         subtitle=subtitle,
         savefig=savefig,
-        show=False,
+        show=True,
     )
     if not show:
         return fig
