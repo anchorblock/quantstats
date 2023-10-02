@@ -57,7 +57,6 @@ def _match_dates(returns, benchmark):
 
     return returns, benchmark
 
-
 def html(
     returns,
     benchmark=None,
@@ -756,7 +755,13 @@ def full(
                 strategy_title=strategy_title,
             )
         )
-
+        print("\n")
+        iDisplay(iHTML("<h3> Mean Information Ratio: </h3>"))
+        mean_information_ratio = _stats.information_ratio(
+                        returns, benchmark, prepare_returns=False
+                    )
+        print(mean_information_ratio)
+        print("\n\n")
         if isinstance(dd, _pd.Series):
             iDisplay(iHTML('<h4 style="margin-bottom:20px">Worst 5 Drawdowns</h4>'))
             if dd_info.empty:
@@ -793,7 +798,14 @@ def full(
             benchmark_title=benchmark_title,
             strategy_title=strategy_title,
         )
+        print("\n")
+        iDisplay(iHTML("<h2> Mean Information Ratio: </h2>"))
+        mean_information_ratio = _stats.information_ratio(
+                        returns, benchmark, prepare_returns=False
+                    )
+        print(mean_information_ratio)
         print("\n\n")
+            
         print("[Worst 5 Drawdowns]\n")
         if isinstance(dd, _pd.Series):
             if dd_info.empty:
@@ -876,7 +888,7 @@ def full(
         assets = assets_used(df)
         print(*assets)
 
-    print('\n\n')
+    
     iDisplay(iHTML("<h2> Strategy Visualization </h2>"))
 
     plots(
@@ -901,7 +913,11 @@ def full(
                         periods_per_year=252,
                         **kwargs,
                         )
-
+    _plots.rolling_information_ratio(returns,
+                                     benchmark=benchmark,
+                                     figsize=figsize,
+                                     **kwargs,
+                                     )
     if df is not None:
         # Bull, Bear, Crab selection
         start = df.index[0]
@@ -1055,7 +1071,7 @@ def metrics(
     sep=False,
     compounded=True,
     periods_per_year=256,
-    prepare_returns=True,
+    prepare_returns=False,
     match_dates=True,
     **kwargs,
 ):
@@ -1176,25 +1192,32 @@ def metrics(
                 _stats.comp(pre_df) * pct).map("{:,.2f}".format)
  
         # adding code for active return:
-        if 'benchmark' in df:
-            numcum = {}
-            for ind in metrics.index:
-                numcum[ind] = float(
-                    metrics['Cumulative Return %'].loc[ind].replace(',', ''))
-            metrics['Cumulative Return1 %'] = metrics.index.map(numcum)
-            active_return = {}
-            active_return['benchmark'] = 0
-            for ind in metrics.index:
-                if ind != 'benchmark':
-                    active_return[ind] = metrics['Cumulative Return1 %'].loc[ind] - metrics['Cumulative Return1 %'].loc['benchmark']
-            metrics['Active Return %'] = metrics.index.map(active_return)
-            metrics = metrics.drop(columns='Cumulative Return1 %')
+        # if 'benchmark' in df:
+            # numcum = {}
+            # for ind in metrics.index:
+            #     numcum[ind] = float(
+            #         metrics['Cumulative Return %'].loc[ind].replace(',', ''))
+            # metrics['Cumulative Return1 %'] = metrics.index.map(numcum)
+            # active_return = {}
+            # active_return['benchmark'] = 0
+            # for ind in metrics.index:
+            #     if ind != 'benchmark':
+            #         active_return[ind] = metrics['Cumulative Return1 %'].loc[ind] - metrics['Cumulative Return1 %'].loc['benchmark']
+            # metrics['Active Return %'] = metrics.index.map(active_return)
+            # metrics = metrics.drop(columns='Cumulative Return1 %')
+
     else:
         metrics["Total Return %"] = (df.sum() * pct).map("{:,.2f}".format)
         if precost_returns is not None:
             metrics["Pre-Cost Total Return %"] = (pre_df.sum() * pct).map("{:,.2f}".format) 
                
-
+    if 'benchmark' in df:
+        active_ret = {}
+        active_ret['benchmark'] = 0
+        for ind in metrics.index:
+            if ind != 'benchmark':
+                active_ret[ind] = _stats.mean_active_return(returns,benchmark)
+        metrics['Mean Active Return %'] = metrics.index.map(active_ret)        
 
     metrics["CAGR﹪%"] = _stats.cagr(df, rf, compounded) * pct
 
@@ -1264,9 +1287,7 @@ def metrics(
                 metrics["R^2"] = _stats.r_squared(
                     df["returns"], df["benchmark"], prepare_returns=False
                 )
-                metrics["Information Ratio"] = _stats.information_ratio(
-                    df["returns"], df["benchmark"], prepare_returns=False
-                )
+                
             elif isinstance(returns, _pd.DataFrame):
                 metrics["R^2"] = (
                     [
@@ -1719,7 +1740,6 @@ def plots(
         ylabel=False,
         prepare_returns=False,
     )
-
     _plots.histogram(
         returns,
         benchmark,

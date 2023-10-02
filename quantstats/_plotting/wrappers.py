@@ -918,6 +918,25 @@ def rolling_volatility(
     )
     if not show:
         return fig
+
+def rolling_information_ratio(
+    returns,
+    benchmark=None,
+    period=256,
+    period_label="1-Year",
+    lw=1.5,
+    figsize=(10, 3),
+    
+):  
+    information_ratio = _stats.rolling_information_ratio(returns=returns,benchmark=benchmark,rolling_period=period)
+    #rolling information ratio
+    _plt.figure(figsize=(figsize[0]* 1.25, figsize[1] * 0.5))
+    _plt.plot(information_ratio,label='Information Ratio')
+    _plt.axhline(0,color='red',ls="--")
+    _plt.title("Rolling Information Ratio (%s)" % period_label)
+    _plt.legend()
+    _plt.tight_layout()
+    _plt.show()
     
 def basic_sharpe(returns,
     benchmark=None,

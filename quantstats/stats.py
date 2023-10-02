@@ -900,18 +900,43 @@ def r2(returns, benchmark):
     """Shorthand for r_squared()"""
     return r_squared(returns, benchmark)
 
+def mean_active_return(returns: _pd.Series,
+                       benchmark: _pd.Series):
+    returns = returns.fillna(0)
+    # reindex benchmark according to returns
+    benchmark = benchmark.fillna(0).reindex(returns.index)
+    # keep the values of returns series for which benchmark is not nan
+    returns = returns[~benchmark.isna()]
+    #match the index of benchmark according to returns series
+    benchmark = benchmark[~benchmark.isna()]
 
-def information_ratio(returns, benchmark, prepare_returns=True):
+    active_returns = returns - benchmark
+    mean_active_ret = active_returns.mean()*100
+    rounded_active_ret = round(mean_active_ret,4)
+    return rounded_active_ret
+
+def information_ratio(returns, benchmark, prepare_returns=False):
     """
     Calculates the information ratio
     (basically the risk return ratio of the net profits)
     """
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
-    diff_rets = returns - _utils._prepare_benchmark(benchmark, returns.index)
+    diff_rets = returns - benchmark
 
-    return diff_rets.mean() / diff_rets.std()
+    return diff_rets.mean()/diff_rets.std()
 
+def rolling_information_ratio(returns,benchmark,rolling_period=256):
+    returns = returns.fillna(0)
+    benchmark = benchmark.fillna(0)
+    active_returns = returns-benchmark
+    rolling_ir_list = []
+    for i in range(len(returns) - rolling_period + 1):
+        window_active_returns = active_returns[i:i+rolling_period]
+        ir = window_active_returns.mean() / window_active_returns.std()
+        rolling_ir_list.append(ir)
+    rolling_ir_series = _pd.Series(rolling_ir_list, index=returns.index[rolling_period-1:]) 
+    return rolling_ir_series   
 
 def greeks(returns, benchmark, periods=252.0, prepare_returns=True):
     """Calculates alpha and beta of the portfolio"""
