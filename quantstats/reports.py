@@ -685,6 +685,7 @@ def full(
     periods_per_year=252,
     match_dates=True,
     df=None,  # expecting positions, long_exposure, short_exposure, net_leverage, gross_leverage, transactions, max_leverage columns
+    type=None,
     **kwargs,
 ):
     # prepare timeseries
@@ -756,12 +757,13 @@ def full(
             )
         )
         print("\n")
-        iDisplay(iHTML("<h3> Mean Information Ratio: </h3>"))
-        mean_information_ratio = _stats.information_ratio(
-                        returns, benchmark, prepare_returns=False
-                    )
-        print(mean_information_ratio)
-        print("\n\n")
+        if type == None:
+            iDisplay(iHTML("<h3> Mean Information Ratio: </h3>"))
+            mean_information_ratio = _stats.information_ratio(
+                            returns, benchmark, prepare_returns=False
+                        )
+            print(mean_information_ratio)
+            print("\n\n")
         if isinstance(dd, _pd.Series):
             iDisplay(iHTML('<h4 style="margin-bottom:20px">Worst 5 Drawdowns</h4>'))
             if dd_info.empty:
@@ -797,14 +799,16 @@ def full(
             prepare_returns=False,
             benchmark_title=benchmark_title,
             strategy_title=strategy_title,
+            type = None,
         )
         print("\n")
-        iDisplay(iHTML("<h2> Mean Information Ratio: </h2>"))
-        mean_information_ratio = _stats.information_ratio(
-                        returns, benchmark, prepare_returns=False
-                    )
-        print(mean_information_ratio)
-        print("\n\n")
+        if type == None:
+            iDisplay(iHTML("<h2> Mean Information Ratio: </h2>"))
+            mean_information_ratio = _stats.information_ratio(
+                            returns, benchmark, prepare_returns=False
+                        )
+            print(mean_information_ratio)
+            print("\n\n")
             
         print("[Worst 5 Drawdowns]\n")
         if isinstance(dd, _pd.Series):
@@ -905,19 +909,21 @@ def full(
     )
 
     # Plots sharpe ratio of strategy
-    _plots.basic_sharpe(returns,
-                        benchmark=benchmark,
-                        rf=0.0,
-                        grayscale=False,
-                        figsize=figsize,
-                        periods_per_year=252,
-                        **kwargs,
-                        )
-    _plots.rolling_information_ratio(returns,
-                                     benchmark=benchmark,
-                                     figsize=figsize,
-                                     **kwargs,
-                                     )
+    if len(returns) > 6 * 30:
+        _plots.basic_sharpe(returns,
+                            benchmark=benchmark,
+                            rf=0.0,
+                            grayscale=False,
+                            figsize=figsize,
+                            periods_per_year=252,
+                            **kwargs,
+                            )
+    if type == None:
+        _plots.rolling_information_ratio(returns,
+                                        benchmark=benchmark,
+                                        figsize=figsize,
+                                        **kwargs,
+                                        )
     if df is not None:
         # Bull, Bear, Crab selection
         start = df.index[0]
@@ -1633,7 +1639,8 @@ def plots(
     benchmark_colname = kwargs.get("benchmark_title", "Benchmark")
     strategy_colname = kwargs.get("strategy_title", "Strategy")
     active = kwargs.get("active", "False")
-
+    len_returns = len(returns)
+    
     if isinstance(returns, _pd.DataFrame):
         if len(returns.columns) > 1:
             if isinstance(strategy_colname, str):
@@ -1781,33 +1788,34 @@ def plots(
             prepare_returns=False,
         )
 
-    _plots.rolling_volatility(
-        returns,
-        benchmark,
-        grayscale=grayscale,
-        figsize=small_fig_size,
-        show=True,
-        ylabel=False,
-        period=win_half_year,
-    )
+    if len(returns) > 6 * 30:
+        _plots.rolling_volatility(
+            returns,
+            benchmark,
+            grayscale=grayscale,
+            figsize=small_fig_size,
+            show=True,
+            ylabel=False,
+            period=win_half_year,
+        )
 
-    _plots.rolling_sharpe(
-        returns,
-        grayscale=grayscale,
-        figsize=small_fig_size,
-        show=True,
-        ylabel=False,
-        period=win_half_year,
-    )
+        _plots.rolling_sharpe(
+            returns,
+            grayscale=grayscale,
+            figsize=small_fig_size,
+            show=True,
+            ylabel=False,
+            period=win_half_year,
+        )
 
-    _plots.rolling_sortino(
-        returns,
-        grayscale=grayscale,
-        figsize=small_fig_size,
-        show=True,
-        ylabel=False,
-        period=win_half_year,
-    )
+        _plots.rolling_sortino(
+            returns,
+            grayscale=grayscale,
+            figsize=small_fig_size,
+            show=True,
+            ylabel=False,
+            period=win_half_year,
+        )
 
     if isinstance(returns, _pd.Series):
         _plots.drawdowns_periods(
