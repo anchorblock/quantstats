@@ -70,6 +70,7 @@ def html(
     figfmt="svg",
     template_path=None,
     match_dates=True,
+    type=None,
     **kwargs,
 ):
 
@@ -140,6 +141,7 @@ def html(
         prepare_returns=False,
         benchmark_title=benchmark_title,
         strategy_title=strategy_title,
+        type=type,  # Use type = None for cumulative return, default -> None, for other values, no cumulative return is shown.
     )[2:]
 
     mtrx.index.name = "Metric"
@@ -685,7 +687,7 @@ def full(
     periods_per_year=252,
     match_dates=True,
     df=None,  # expecting positions, long_exposure, short_exposure, net_leverage, gross_leverage, transactions, max_leverage columns
-    type=None,
+    type=None,  # Added type parameter for dse stocks backtesting
     **kwargs,
 ):
     # prepare timeseries
@@ -754,6 +756,7 @@ def full(
                 prepare_returns=False,
                 benchmark_title=benchmark_title,
                 strategy_title=strategy_title,
+                type=type,
             )
         )
         print("\n")
@@ -982,6 +985,7 @@ def basic(
     compounded=True,
     periods_per_year=252,
     match_dates=True,
+    type=None,
     **kwargs,
 ):
 
@@ -1079,6 +1083,7 @@ def metrics(
     periods_per_year=256,
     prepare_returns=False,
     match_dates=True,
+    type = None,    # Added type parameter for dse stocks backtesting
     **kwargs,
 ):
     if postcost_returns is not None:
@@ -1190,33 +1195,34 @@ def metrics(
 
     metrics["~"] = blank
 
-    if compounded:
-        metrics["Cumulative Return %"] = (
-            _stats.comp(df) * pct).map("{:,.2f}".format)
-        if precost_returns is not None:
-            metrics["Pre-Cost Cumulative Return %"] = (
-                _stats.comp(pre_df) * pct).map("{:,.2f}".format)
- 
-        # adding code for active return:
-        # if 'benchmark' in df:
-            # numcum = {}
-            # for ind in metrics.index:
-            #     numcum[ind] = float(
-            #         metrics['Cumulative Return %'].loc[ind].replace(',', ''))
-            # metrics['Cumulative Return1 %'] = metrics.index.map(numcum)
-            # active_return = {}
-            # active_return['benchmark'] = 0
-            # for ind in metrics.index:
-            #     if ind != 'benchmark':
-            #         active_return[ind] = metrics['Cumulative Return1 %'].loc[ind] - metrics['Cumulative Return1 %'].loc['benchmark']
-            # metrics['Active Return %'] = metrics.index.map(active_return)
-            # metrics = metrics.drop(columns='Cumulative Return1 %')
+    if type == None:    # Removed cumulative return for dse
+        if compounded:
+            metrics["Cumulative Return %"] = (
+                _stats.comp(df) * pct).map("{:,.2f}".format)
+            if precost_returns is not None:
+                metrics["Pre-Cost Cumulative Return %"] = (
+                    _stats.comp(pre_df) * pct).map("{:,.2f}".format)
+    
+            # adding code for active return:
+            # if 'benchmark' in df:
+                # numcum = {}
+                # for ind in metrics.index:
+                #     numcum[ind] = float(
+                #         metrics['Cumulative Return %'].loc[ind].replace(',', ''))
+                # metrics['Cumulative Return1 %'] = metrics.index.map(numcum)
+                # active_return = {}
+                # active_return['benchmark'] = 0
+                # for ind in metrics.index:
+                #     if ind != 'benchmark':
+                #         active_return[ind] = metrics['Cumulative Return1 %'].loc[ind] - metrics['Cumulative Return1 %'].loc['benchmark']
+                # metrics['Active Return %'] = metrics.index.map(active_return)
+                # metrics = metrics.drop(columns='Cumulative Return1 %')
 
-    else:
-        metrics["Total Return %"] = (df.sum() * pct).map("{:,.2f}".format)
-        if precost_returns is not None:
-            metrics["Pre-Cost Total Return %"] = (pre_df.sum() * pct).map("{:,.2f}".format) 
-               
+        else:
+            metrics["Total Return %"] = (df.sum() * pct).map("{:,.2f}".format)
+            if precost_returns is not None:
+                metrics["Pre-Cost Total Return %"] = (pre_df.sum() * pct).map("{:,.2f}".format) 
+                
     if 'benchmark' in df:
         active_ret = {}
         active_ret['benchmark'] = 0
