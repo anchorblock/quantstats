@@ -231,7 +231,7 @@ Install using ``pip``:
 
 .. code:: bash
 
-    $ pip install quantstats --upgrade --no-cache-dir
+    $ pip install git+https://github.com/anchorblock/quantstats.git
 
 
 Install using ``conda``:
